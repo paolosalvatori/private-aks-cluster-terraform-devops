@@ -1,0 +1,88 @@
+name: $(BuildDefinitionName)_$(date:yyyyMMdd)$(rev:.r)
+
+trigger: none
+pr: none
+
+variables:
+- group: global-variables
+- name: azureSubscription
+  value: AzureSubscription
+- name: terraformPath
+  value: /terraform/
+- name: terraformVersion
+  value: 1.0.7
+- name: tfstatePath
+  value: terraform.tfstate
+- name: environment
+  value: production
+- name: prefix
+  value: Babosbird
+- name: location
+  value: westeurope
+- name: kubernetesVersion
+  value: '1.21.2'
+  
+pool:
+  vmImage: ubuntu-latest
+
+stages :
+- stage: terraform_deployment
+  displayName: 'Terraform Deployment'
+  jobs: 
+  - deployment: production
+    displayName: 'Terraform Apply'
+    environment: $(environment)
+    continueOnError: false
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: 'Get Latest Kubernetes Version'
+            inputs:
+              scriptType: bash
+              scriptLocation: inlineScript
+              azureSubscription: $(azureSubscription)
+              addSpnToEnvironment: true
+              inlineScript: |
+                version=$(az aks get-versions --location $(location) --query orchestrators[-1].orchestratorVersion --output tsv)
+                echo "##vso[task.setvariable variable=kubernetesVersion;]$version"
+                echo "kubernetesVersion: $(kubernetesVersion)"
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+            displayName: 'Terraform Install'
+            inputs:
+              terraformVersion: $(terraformVersion)
+          - task: TerraformTaskV2@2
+            displayName: 'Terraform Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              backendServiceArm: $(azureSubscription)
+              backendAzureRmResourceGroupName: $(terraformBackendResourceGroupName)
+              backendAzureRmStorageAccountName: $(terraformBackendStorageAccountName)
+              backendAzureRmContainerName: '$(terraformBackendContainerName)'
+              backendAzureRmKey: $(tfstatePath)
+              workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+          - task: TerraformTaskV2@2
+            displayName: 'Terraform Validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+          - task: TerraformTaskV2@2
+            displayName: 'Terraform Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-input=false -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="kubernetes_version=$(kubernetesVersion)" -var-file="$(System.DefaultWorkingDirectory)/tfvars/$(environment)/$(environment).tfvars"'
+              environmentServiceNameAzureRM: $(azureSubscription)
+              workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+          - task: TerraformTaskV2@2
+            displayName: 'Terraform Apply'
+            enabled: true
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '-input=false -auto-approve -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="kubernetes_version=$(kubernetesVersion)" -var-file="$(System.DefaultWorkingDirectory)/tfvars/$(environment)/$(environment).tfvars"'
+              environmentServiceNameAzureRM: $(azureSubscription)
+              workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'

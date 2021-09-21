@@ -1,0 +1,8 @@
+resource_group_name          = "ContosoStagRG"
+aks_cluster_name             = "ContosoStagAks"
+log_analytics_workspace_name = "ContosoStagAksWorkspace"
+domain_name_label            = "contosostagestvm"
+firewall_name                = "ContosoStagFirewall"
+acr_name                     = "ContosoStagAcr"
+bastion_host_name            = "ContosoStagBastionHost"
+key_vault_name               = "ContosoStagAksKeyVault"

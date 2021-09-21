@@ -1,0 +1,160 @@
+name: $(BuildDefinitionName)_$(date:yyyyMMdd)$(rev:.r)
+
+trigger: none
+pr: none
+
+variables:
+- group: global-variables
+- name: azureSubscription
+  value: AzureSubscription
+- name: terraformPath
+  value: /terraform/
+- name: terraformVersion
+  value: 1.0.7
+- name: tfstatePath
+  value: terraform.tfstate
+- name: environment
+  value: production
+- name: prefix
+  value: Babosbird
+- name: location
+  value: westeurope
+- name: kubernetesVersion
+  value: '1.21.2'
+- name: resourceGroupName
+  value: '$(prefix)RG'
+- name: aksClusterName
+  value: '$(prefix)Aks'
+- name: logAnalyticsWorkspaceName
+  value: '$(prefix)AksWorkspace'
+- name: domainNameLabel
+  value: '$(prefix)testvm'
+- name: firewallName
+  value: '$(prefix)Firewall'
+- name: acrName
+  value: '$(prefix)Acr'
+- name: bastionHostName
+  value: '$(prefix)BastionHost'
+- name: keyVaultName
+  value: '$(prefix)AksKeyVault'
+
+#- name: TF_VAR_aks_cluster_name
+#  value: GatoAks
+#- name: TF_VAR_resource_group_name
+#  value: GatoRG
+  
+pool:
+  vmImage: ubuntu-latest
+
+stages :
+- stage: validate
+  displayName: 'Terraform Validate'
+  jobs:
+  - job: validate
+    displayName: 'Terraform Validate'
+    continueOnError: false
+    steps:
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: 'Terraform Install'
+      inputs:
+        terraformVersion: $(terraformVersion)
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(azureSubscription)
+        backendAzureRmResourceGroupName: $(terraformBackendResourceGroupName)
+        backendAzureRmStorageAccountName: $(terraformBackendStorageAccountName)
+        backendAzureRmContainerName: '$(terraformBackendContainerName)'
+        backendAzureRmKey: $(tfstatePath)
+        workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Validate'
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+
+- stage: plan
+  displayName: 'Terraform Plan'
+  dependsOn: [validate]
+  condition: succeeded('validate')
+  jobs:
+  - job: plan
+    displayName: 'Terraform Plan'
+    steps:
+    - checkout: self
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: 'Terraform Install'
+      inputs:
+        terraformVersion: $(terraformVersion)
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(azureSubscription)
+        backendAzureRmResourceGroupName: $(terraformBackendResourceGroupName)
+        backendAzureRmStorageAccountName: $(terraformBackendStorageAccountName)
+        backendAzureRmContainerName: '$(terraformBackendContainerName)'
+        backendAzureRmKey: $(tfstatePath)
+        workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Plan'
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        commandOptions: '-input=false -var ssh_public_key=$(sshPublicKey) -var location=$(location) -var kubernetes_version=$(kubernetesVersion) -var resource_group_name=$(resourceGroupName) -var aks_cluster_name=$(aksClusterName) -var log_analytics_workspace_name=$(logAnalyticsWorkspaceName) -var domain_name_label=$(domainNameLabel) -var firewall_name=$(firewallName) -var acr_name=$(acrName) -var bastion_host_name=$(bastionHostName) -var key_vault_name=$(keyVaultName)'
+        environmentServiceNameAzureRM: $(azureSubscription)
+        workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+
+- stage: apply
+  displayName: 'Terraform Apply'
+  dependsOn: [plan]
+  condition: succeeded('plan')
+  jobs:
+    - job: apply
+      displayName: 'Terraform Apply'
+      steps:
+      - checkout: self
+      - task: AzureCLI@2
+        displayName: 'Get Latest Kubernetes Version'
+        inputs:
+          scriptType: bash
+          scriptLocation: inlineScript
+          azureSubscription: $(azureSubscription)
+          addSpnToEnvironment: true
+          inlineScript: |
+            version=$(az aks get-versions --location $(location) --query orchestrators[-1].orchestratorVersion --output tsv)
+            echo "##vso[task.setvariable variable=kubernetesVersion;]$version"
+      - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+        displayName: 'Terraform Install'
+        inputs:
+          terraformVersion: $(terraformVersion)
+      - task: TerraformTaskV2@2
+        displayName: 'Terraform Init'
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          backendServiceArm: $(azureSubscription)
+          backendAzureRmResourceGroupName: $(terraformBackendResourceGroupName)
+          backendAzureRmStorageAccountName: $(terraformBackendStorageAccountName)
+          backendAzureRmContainerName: '$(terraformBackendContainerName)'
+          backendAzureRmKey: $(tfstatePath)
+          workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+      - task: TerraformTaskV2@2
+        displayName: 'Terraform Plan'
+        inputs:
+          provider: 'azurerm'
+          command: 'plan'
+          commandOptions: '-input=false -var ssh_public_key=$(sshPublicKey) -var location=$(location) -var kubernetes_version=$(kubernetesVersion) -var resource_group_name=$(resourceGroupName) -var aks_cluster_name=$(aksClusterName) -var log_analytics_workspace_name=$(logAnalyticsWorkspaceName) -var domain_name_label=$(domainNameLabel) -var firewall_name=$(firewallName) -var acr_name=$(acrName) -var bastion_host_name=$(bastionHostName) -var key_vault_name=$(keyVaultName)'
+          environmentServiceNameAzureRM: $(azureSubscription)
+          workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+      - task: TerraformTaskV2@2
+        displayName: 'Terraform Apply'
+        inputs:
+          provider: 'azurerm'
+          command: 'apply'
+          commandOptions: '-input=false -auto-approve -var ssh_public_key=$(sshPublicKey) -var location=$(location) -var kubernetes_version=$(kubernetesVersion) -var resource_group_name=$(resourceGroupName) -var aks_cluster_name=$(aksClusterName) -var log_analytics_workspace_name=$(logAnalyticsWorkspaceName) -var domain_name_label=$(domainNameLabel) -var firewall_name=$(firewallName) -var acr_name=$(acrName) -var bastion_host_name=$(bastionHostName) -var key_vault_name=$(keyVaultName)'
+          environmentServiceNameAzureRM: $(azureSubscription)
+          workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
