@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # Variables
-keyVaultName="DevOpsTerraformKeyVault"
-keyVaultResourceGroupName="KeyVaultsRG"
+keyVaultName="KEY_VAULT_NAME"
+keyVaultResourceGroupName="KEY_VAULT_RESOURCE_GROUP_NAME"
 keyVaultSku="Standard"
 location="WestEurope"
-storageAccountName="baboterraform"
-storageAccountResourceGroupName="StorageAccountsRG"
+storageAccountName="STORAGE_ACCOUNT_NAME"
+storageAccountResourceGroupName="ATORAGE_ACCOUNT_RESOURCE_GROUP_NME"
 containerName="tfstate"
-sshPublicKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDRHrICSTesKCNyH6vN4K3YwhDUO89cqnEDz2bcZ0sLn9mU6hwyXHna5vME8Y/A8Jbj4XiMyePbAJsX8R/Yyq5pZSiqYpPqSdRGOGqKxQPMBE8WFN1RZmrbrb0ElVQtdWWhlCis4PyMn76fbH6Q8zf/cPzzm9GTimVw62BGhdqdHHru7Sy3I+WRGVA3Z2xHqpda+4nd9LYQW3zkHP98TbIM5OW8kVhRUtmg3c0tOViU6CsGP9w4FU8TU7wLWoeig69kv6UgikwnJYXkItiLecCbVqOeGwbHZQmawcqEY674E3jgJkJ5nQVblCODR0ODNCtrCDVyT6pX0Hdt1ivIpkf"
+sshPublicKey="ssh-rsa XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+azureDevOpsUrl="https://dev.azure.com/contoso"
+azureDevOpsPat="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+azureDevOpsAgentPoolName="Terraform"
 subscriptionName=$(az account show --query name --output tsv)
 
 # Get storage account key
@@ -214,4 +217,88 @@ if [[ $? != 0 ]]; then
     fi
 else
 	echo "[$sshPublicKeySecretName] secret already exists in the [$keyVaultName] key vault"
+fi
+
+# Check if the secret already exists
+azureDevOpsUrlSecretName="azureDevOpsUrl"
+azureDevOpsUrlSecretValue=$azureDevOpsUrl
+
+echo "Checking if [$azureDevOpsUrlSecretName] secret actually exists in the [$keyVaultName] key vault..."
+
+az keyvault secret show --name $azureDevOpsUrlSecretName --vault-name $keyVaultName &> /dev/null
+
+if [[ $? != 0 ]]; then
+	echo "No [$azureDevOpsUrlSecretName] secret actually exists in the [$keyVaultName] key vault"
+    echo "Creating [$azureDevOpsUrlSecretName] secret in the [$keyVaultName] key vault..."
+    
+    # Create the secret
+    az keyvault secret set \
+    --name $azureDevOpsUrlSecretName \
+    --vault-name $keyVaultName \
+    --value "$azureDevOpsUrlSecretValue" 1> /dev/null
+        
+    if [[ $? == 0 ]]; then
+        echo "[$azureDevOpsUrlSecretName] secret successfully created in the [$keyVaultName] key vault"
+    else
+        echo "Failed to create [$azureDevOpsUrlSecretName] secret in the [$keyVaultName] key vault"
+        exit
+    fi
+else
+	echo "[$azureDevOpsUrlSecretName] secret already exists in the [$keyVaultName] key vault"
+fi
+
+# Check if the secret already exists
+azureDevOpsPatSecretName="azureDevOpsPat"
+azureDevOpsPatSecretValue=$azureDevOpsPat
+
+echo "Checking if [$azureDevOpsPatSecretName] secret actually exists in the [$keyVaultName] key vault..."
+
+az keyvault secret show --name $azureDevOpsPatSecretName --vault-name $keyVaultName &> /dev/null
+
+if [[ $? != 0 ]]; then
+	echo "No [$azureDevOpsPatSecretName] secret actually exists in the [$keyVaultName] key vault"
+    echo "Creating [$azureDevOpsPatSecretName] secret in the [$keyVaultName] key vault..."
+    
+    # Create the secret
+    az keyvault secret set \
+    --name $azureDevOpsPatSecretName \
+    --vault-name $keyVaultName \
+    --value "$azureDevOpsPatSecretValue" 1> /dev/null
+        
+    if [[ $? == 0 ]]; then
+        echo "[$azureDevOpsPatSecretName] secret successfully created in the [$keyVaultName] key vault"
+    else
+        echo "Failed to create [$azureDevOpsPatSecretName] secret in the [$keyVaultName] key vault"
+        exit
+    fi
+else
+	echo "[$azureDevOpsPatSecretName] secret already exists in the [$keyVaultName] key vault"
+fi
+
+# Check if the secret already exists
+azureDevOpsAgentPoolNameSecretName="azureDevOpsAgentPoolName"
+azureDevOpsAgentPoolNameSecretValue=$azureDevOpsAgentPoolName
+
+echo "Checking if [$azureDevOpsAgentPoolNameSecretName] secret actually exists in the [$keyVaultName] key vault..."
+
+az keyvault secret show --name $azureDevOpsAgentPoolNameSecretName --vault-name $keyVaultName &> /dev/null
+
+if [[ $? != 0 ]]; then
+	echo "No [$azureDevOpsAgentPoolNameSecretName] secret actually exists in the [$keyVaultName] key vault"
+    echo "Creating [$azureDevOpsAgentPoolNameSecretName] secret in the [$keyVaultName] key vault..."
+    
+    # Create the secret
+    az keyvault secret set \
+    --name $azureDevOpsAgentPoolNameSecretName \
+    --vault-name $keyVaultName \
+    --value "$azureDevOpsAgentPoolNameSecretValue" 1> /dev/null
+        
+    if [[ $? == 0 ]]; then
+        echo "[$azureDevOpsAgentPoolNameSecretName] secret successfully created in the [$keyVaultName] key vault"
+    else
+        echo "Failed to create [$azureDevOpsAgentPoolNameSecretName] secret in the [$keyVaultName] key vault"
+        exit
+    fi
+else
+	echo "[$azureDevOpsAgentPoolNameSecretName] secret already exists in the [$keyVaultName] key vault"
 fi

@@ -25,10 +25,6 @@ locals {
 data "azurerm_client_config" "current" {
 }
 
-resource "random_id" "rg" {
-  byte_length = 8
-}
-
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
@@ -65,12 +61,6 @@ module "hub_network" {
       address_prefixes : var.hub_bastion_subnet_address_prefix
       enforce_private_link_endpoint_network_policies : true
       enforce_private_link_service_network_policies : false
-    },
-    {
-      name : var.jumpbox_subnet_name
-      address_prefixes : var.jumpbox_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
     }
   ]
 }
@@ -80,7 +70,7 @@ module "aks_network" {
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = var.location
   vnet_name                    = var.aks_vnet_name
-  address_space                = var.aks_address_space
+  address_space                = var.aks_vnet_address_space
   log_analytics_workspace_id   = module.log_analytics_workspace.id
   log_analytics_retention_days = var.log_analytics_retention_days
 
@@ -94,6 +84,12 @@ module "aks_network" {
     {
       name : var.additional_node_pool_subnet_name
       address_prefixes : var.additional_node_pool_subnet_address_prefix
+      enforce_private_link_endpoint_network_policies : true
+      enforce_private_link_service_network_policies : false
+    },
+    {
+      name : var.vm_subnet_name
+      address_prefixes : var.vm_subnet_address_prefix
       enforce_private_link_endpoint_network_policies : true
       enforce_private_link_service_network_policies : false
     }
@@ -116,6 +112,8 @@ module "firewall" {
   source                       = "./modules/firewall"
   name                         = var.firewall_name
   resource_group_name          = azurerm_resource_group.rg.name
+  zones                        = var.firewall_zones
+  threat_intel_mode            = var.firewall_threat_intel_mode
   location                     = var.location
   pip_name                     = "${var.firewall_name}PublicIp"
   subnet_id                    = module.hub_network.subnet_ids["AzureFirewallSubnet"]
@@ -161,6 +159,7 @@ module "aks_cluster" {
   name                                     = var.aks_cluster_name
   location                                 = var.location
   resource_group_name                      = azurerm_resource_group.rg.name
+  resource_group_id                        = azurerm_resource_group.rg.id
   kubernetes_version                       = var.kubernetes_version
   dns_prefix                               = lower(var.aks_cluster_name)
   private_cluster_enabled                  = true
@@ -197,16 +196,18 @@ module "aks_cluster" {
   depends_on                               = [module.routetable]
 }
 
-resource "azurerm_role_assignment" "net_contributor" {
+resource "azurerm_role_assignment" "network_contributor" {
+  scope                = azurerm_resource_group.rg.id
   role_definition_name = "Network Contributor"
-  scope                = module.aks_network.subnet_ids[var.default_node_pool_subnet_name]
-  principal_id         = module.aks_cluster.principal_id
+  principal_id         = module.aks_cluster.aks_identity_principal_id
+  skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "acr_pull" {
   role_definition_name = "AcrPull"
   scope                = module.container_registry.id
-  principal_id         = module.aks_cluster.principal_id
+  principal_id         = module.aks_cluster.kubelet_identity_object_id
+  skip_service_principal_aad_check = true
 }
 
 # Generate randon name for virtual machine
@@ -240,27 +241,26 @@ module "bastion_host" {
 
 module "virtual_machine" {
   source                              = "./modules/virtual_machine"
-  name                                = var.jumpbox_vm_name
-  size                                = var.jumpbox_vm_size
+  name                                = var.vm_name
+  size                                = var.vm_size
   location                            = var.location
-  public_ip                           = var.jumpbox_vm_public_ip
+  public_ip                           = var.vm_public_ip
   vm_user                             = var.admin_username
   admin_ssh_public_key                = var.ssh_public_key
-  os_disk_image                       = var.jumpbox_vm_os_disk_image
+  os_disk_image                       = var.vm_os_disk_image
   domain_name_label                   = var.domain_name_label
   resource_group_name                 = azurerm_resource_group.rg.name
-  vnet_id                             = module.hub_network.vnet_id
-  kube_config_raw                     = module.aks_cluster.kube_config_raw
-  subnet_id                           = module.hub_network.subnet_ids[var.jumpbox_subnet_name]
-  dns_zone_name                       = join(".", slice(split(".", module.aks_cluster.private_fqdn), 1, length(split(".", module.aks_cluster.private_fqdn))))
-  dns_zone_resource_group_name        = module.aks_cluster.node_resource_group
-  os_disk_storage_account_type        = var.jumpbox_vm_os_disk_storage_account_type
+  subnet_id                           = module.aks_network.subnet_ids[var.vm_subnet_name]
+  os_disk_storage_account_type        = var.vm_os_disk_storage_account_type
   boot_diagnostics_storage_account    = module.storage_account.primary_blob_endpoint
-  custom_script_file_uri              = var.jumpbox_vm_custom_script_file_uri
   log_analytics_workspace_id          = module.log_analytics_workspace.workspace_id
   log_analytics_workspace_key         = module.log_analytics_workspace.primary_shared_key
   log_analytics_workspace_resource_id = module.log_analytics_workspace.id
   log_analytics_retention_days        = var.log_analytics_retention_days
+  script_storage_account_name         = var.script_storage_account_name
+  script_storage_account_key          = var.script_storage_account_key
+  container_name                      = var.container_name
+  script_name                         = var.script_name
 }
 
 module "node_pool" {
@@ -362,7 +362,7 @@ module "acr_private_endpoint" {
   name                           = "${module.container_registry.name}PrivateEndpoint"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.hub_network.subnet_ids[var.jumpbox_subnet_name]
+  subnet_id                      = module.aks_network.subnet_ids[var.vm_subnet_name]
   tags                           = var.tags
   private_connection_resource_id = module.container_registry.id
   is_manual_connection           = false
@@ -376,7 +376,7 @@ module "key_vault_private_endpoint" {
   name                           = "${title(module.key_vault.name)}PrivateEndpoint"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.hub_network.subnet_ids[var.jumpbox_subnet_name]
+  subnet_id                      = module.aks_network.subnet_ids[var.vm_subnet_name]
   tags                           = var.tags
   private_connection_resource_id = module.key_vault.id
   is_manual_connection           = false
@@ -390,7 +390,7 @@ module "blob_private_endpoint" {
   name                           = "${title(module.storage_account.name)}PrivateEndpoint"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.hub_network.subnet_ids[var.jumpbox_subnet_name]
+  subnet_id                      = module.aks_network.subnet_ids[var.vm_subnet_name]
   tags                           = var.tags
   private_connection_resource_id = module.storage_account.id
   is_manual_connection           = false

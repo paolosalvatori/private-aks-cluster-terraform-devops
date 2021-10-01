@@ -57,39 +57,27 @@ variable "hub_bastion_subnet_address_prefix" {
   type        = list(string)
 }
 
-variable "jumpbox_subnet_name" {
-  description = "Specifies the name of the jumpbox subnet"
-  default     = "JumpboxSubnet"
-  type        = string
-}
-
-variable "jumpbox_subnet_address_prefix" {
-  description = "Specifies the address prefix of the jumbox subnet"
-  default     = ["10.1.2.0/24"]
-  type        = list(string)
-}
-
-variable "jumpbox_public_ip" {
-  description = "Specifies whether creating a public ip for the jumpbox virtual machine"
-  default     = true
-  type        = bool
-}
-
-variable "jumpbox_vm_custom_script_file_uri" {
-  description = "Specifies the URI of the custom script used to configure the jumpbox virtual machine"
-  default     = "https://paolosalvatori.blob.core.windows.net/scripts/configure-jumpbox-vm.sh"
-  type        = string
-}
-
 variable "aks_vnet_name" {
   description = "Specifies the name of the AKS subnet"
   default     = "AksVNet"
   type        = string
 }
 
-variable "aks_address_space" {
+variable "aks_vnet_address_space" {
   description = "Specifies the address prefix of the AKS subnet"
   default     =  ["10.0.0.0/16"]
+  type        = list(string)
+}
+
+variable "vm_subnet_name" {
+  description = "Specifies the name of the jumpbox subnet"
+  default     = "VmSubnet"
+  type        = string
+}
+
+variable "vm_subnet_address_prefix" {
+  description = "Specifies the address prefix of the jumbox subnet"
+  default     = ["10.0.8.0/21"]
   type        = list(string)
 }
 
@@ -195,7 +183,7 @@ variable "default_node_pool_subnet_name" {
 
 variable "default_node_pool_subnet_address_prefix" {
   description = "Specifies the address prefix of the subnet that hosts the default node pool"
-  default     =  ["10.0.0.0/20"]
+  default     =  ["10.0.0.0/21"]
   type        = list(string)
 }
 
@@ -379,36 +367,53 @@ variable "firewall_name" {
   type        = string
 }
 
-variable "jumpbox_vm_name" {
+variable "firewall_threat_intel_mode" {
+  description = "(Optional) The operation mode for threat intelligence-based filtering. Possible values are: Off, Alert, Deny. Defaults to Alert."
+  default     = "Alert"
+  type        = string
+
+  validation {
+    condition = contains(["Off", "Alert", "Deny"], var.firewall_threat_intel_mode)
+    error_message = "The threat intel mode is invalid."
+  }
+}
+
+variable "firewall_zones" {
+  description = "Specifies the availability zones of the Azure Firewall"
+  default     = ["1", "2", "3"]
+  type        = list(string)
+}
+
+variable "vm_name" {
   description = "Specifies the name of the jumpbox virtual machine"
   default     = "TestVm"
   type        = string
 }
 
-variable "jumpbox_vm_public_ip" {
+variable "vm_public_ip" {
   description = "(Optional) Specifies whether create a public IP for the virtual machine"
   type = bool
   default = false
 }
 
-variable "jumpbox_vm_size" {
+variable "vm_size" {
   description = "Specifies the size of the jumpbox virtual machine"
   default     = "Standard_DS1_v2"
   type        = string
 }
 
-variable "jumpbox_vm_os_disk_storage_account_type" {
+variable "vm_os_disk_storage_account_type" {
   description = "Specifies the storage account type of the os disk of the jumpbox virtual machine"
   default     = "Premium_LRS"
   type        = string
 
   validation {
-    condition = contains(["Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS",  "Standard_LRS"], var.jumpbox_vm_os_disk_storage_account_type)
+    condition = contains(["Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS",  "Standard_LRS"], var.vm_os_disk_storage_account_type)
     error_message = "The storage account type of the OS disk is invalid."
   }
 }
 
-variable "jumpbox_vm_os_disk_image" {
+variable "vm_os_disk_image" {
   type        = map(string)
   description = "Specifies the os disk image of the virtual machine"
   default     = {
@@ -580,3 +585,24 @@ variable "ssh_public_key" {
   type        = string
 }
 
+variable "script_storage_account_name" {
+  description = "(Required) Specifies the name of the storage account that contains the custom script."
+  type        = string
+}
+
+variable "script_storage_account_key" {
+  description = "(Required) Specifies the name of the storage account that contains the custom script."
+  type        = string
+}
+
+variable "container_name" {
+  description = "(Required) Specifies the name of the container that contains the custom script."
+  type        = string
+  default     = "scripts"
+}
+
+variable "script_name" {
+  description = "(Required) Specifies the name of the custom script."
+  type        = string
+  default     = "configure-jumpbox-vm.sh"
+}

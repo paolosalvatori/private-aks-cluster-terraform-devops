@@ -13,6 +13,23 @@ variable "location" {
   type        = string
 }
 
+variable "threat_intel_mode" {
+  description = "(Optional) The operation mode for threat intelligence-based filtering. Possible values are: Off, Alert, Deny. Defaults to Alert."
+  default     = "Alert"
+  type        = string
+
+  validation {
+    condition = contains(["Off", "Alert", "Deny"], var.threat_intel_mode)
+    error_message = "The threat intel mode is invalid."
+  }
+}
+
+variable "zones" {
+  description = "Specifies the availability zones of the Azure Firewall"
+  default     = ["1", "2", "3"]
+  type        = list(string)
+}
+
 variable "pip_name" {
   description = "Specifies the firewall public IP name"
   type        = string

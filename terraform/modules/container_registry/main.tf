@@ -19,7 +19,7 @@ resource "azurerm_container_registry" "acr" {
   identity {
     type = "UserAssigned"
     identity_ids = [
-      azurerm_user_assigned_identity.example.id
+      azurerm_user_assigned_identity.acr_identity.id
     ]
   }
 
@@ -39,9 +39,10 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "example" {
+resource "azurerm_user_assigned_identity" "acr_identity" {
   resource_group_name = var.resource_group_name
   location            = var.location
+  tags                = var.tags
 
   name = "${var.name}Identity"
 

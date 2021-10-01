@@ -46,11 +46,6 @@ variable location {
   type = string
 }
 
-variable domain_name_label {
-  description = "(Required) Specifies the DNS domain name of the virtual machine"
-  type = string
-}
-
 variable subnet_id {
   description = "(Required) Specifies the resource id of the subnet hosting the virtual machine"
   type        = string
@@ -68,7 +63,7 @@ variable "boot_diagnostics_storage_account" {
 }
 
 variable "tags" {
-  description = "(Optional) Specifies the tags of the storage account"
+  description = "(Optional) Specifies the tags of the virtual machine"
   default     = {}
 }
 
@@ -116,5 +111,20 @@ variable "container_name" {
 
 variable "script_name" {
   description = "(Required) Specifies the name of the custom script."
+  type        = string
+}
+
+variable "azure_devops_url" {
+  description = "(Required) Specifies the URL of the target Azure DevOps organization."
+  type        = string
+}
+
+variable "azure_devops_pat" {
+  description = "(Required) Specifies the personal access token of the target Azure DevOps organization."
+  type        = string
+}
+
+variable "azure_devops_agent_pool_name" {
+  description = "(Required) Specifies the name of the agent pool in the Azure DevOps organization."
   type        = string
 }

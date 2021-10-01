@@ -8,6 +8,20 @@ terraform {
   required_version = ">= 0.14.9"
 }
 
+resource "azurerm_user_assigned_identity" "aks_identity" {
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tags                = var.tags
+
+  name = "${var.name}Identity"
+
+  lifecycle {
+    ignore_changes = [
+      tags
+    ]
+  }
+}
+
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                      = var.name
   location                  = var.location
@@ -44,7 +58,8 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 
   identity {
-    type = "SystemAssigned"
+    type = "UserAssigned"
+    user_assigned_identity_id = azurerm_user_assigned_identity.aks_identity.id
   }
 
   network_profile {

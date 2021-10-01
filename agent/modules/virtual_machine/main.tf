@@ -13,7 +13,7 @@ resource "azurerm_public_ip" "public_ip" {
   location            = var.location
   resource_group_name = var.resource_group_name
   allocation_method   = "Dynamic"
-  domain_name_label   = lower(var.domain_name_label)
+  domain_name_label   = lower(var.name)
   count               = var.public_ip ? 1 : 0
   tags                = var.tags
 
@@ -129,7 +129,7 @@ resource "azurerm_virtual_machine_extension" "custom_script" {
   settings = <<SETTINGS
     {
       "fileUris": ["https://${var.script_storage_account_name}.blob.core.windows.net/${var.container_name}/${var.script_name}"],
-      "commandToExecute": "bash ${var.script_name}"
+      "commandToExecute": "bash ${var.script_name} '${var.vm_user}' '${var.azure_devops_url}' '${var.azure_devops_pat}' '${var.azure_devops_agent_pool_name}'"
     }
   SETTINGS
 
@@ -142,9 +142,7 @@ resource "azurerm_virtual_machine_extension" "custom_script" {
 
   lifecycle {
     ignore_changes = [
-      tags,
-      settings,
-      protected_settings
+      tags
     ]
   }
 }

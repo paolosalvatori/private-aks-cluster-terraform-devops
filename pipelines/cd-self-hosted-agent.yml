@@ -10,45 +10,23 @@ variables:
 - name: terraformVersion
   value: 1.0.7
 - name: terraformPath
-  value: terraform
+  value: agent
 - name: tfstatePath
-  value: terraform.tfstate
+  value: agent.tfstate
 - name: environment
   value: production
-- name: prefix
-  value: Babosbird
-- name: location
-  value: westeurope
-- name: kubernetesVersion
-  value: '1.21.2'
 - name: resourceGroupName
-  value: '$(prefix)RG'
-- name: aksClusterName
-  value: '$(prefix)Aks'
-- name: logAnalyticsWorkspaceName
-  value: '$(prefix)AksWorkspace'
-- name: domainNameLabel
-  value: '$(prefix)testvm'
-- name: firewallName
-  value: '$(prefix)Firewall'
-- name: acrName
-  value: '$(prefix)Acr'
-- name: bastionHostName
-  value: '$(prefix)BastionHost'
-- name: keyVaultName
-  value: '$(prefix)AksKeyVault'
-- name: vmName
-  value: '$(prefix)Vm'
-- name: hubVNetName
-  value: '$(prefix)HubVNet'
-- name: aksVNetName
-  value: '$(prefix)AksVNet'
+  value: BabosbirdRG
 - name: containerName
   value: scripts
 - name: scriptPath
-  value: terraform/scripts
+  value: agent/scripts
 - name: scriptName
-  value: configure-jumpbox-vm.sh
+  value: configure-self-hosted-agent.sh
+- name: tfvarsPath
+  value: tfvars/agent/agent.tfvars
+- name: location
+  value: westeurope
   
 pool:
   vmImage: ubuntu-latest
@@ -197,18 +175,6 @@ stages :
               echo "Storage Account Key: $(storageAccountKey)"
             displayName: 'Print Variables'
             condition: and(succeeded(), not(eq(variables.storageAccountName, '')), not(eq(variables.storageAccountKey, '')))
-          - task: AzureCLI@2
-            displayName: 'Get Latest Kubernetes Version'
-            condition: and(succeeded(), not(eq(variables.storageAccountName, '')), not(eq(variables.storageAccountKey, '')))
-            inputs:
-              scriptType: bash
-              scriptLocation: inlineScript
-              azureSubscription: $(azureSubscription)
-              addSpnToEnvironment: true
-              inlineScript: |
-                version=$(az aks get-versions --location $(location) --query orchestrators[-1].orchestratorVersion --output tsv)
-                echo "##vso[task.setvariable variable=kubernetesVersion;]$version"
-                echo "kubernetesVersion: $(kubernetesVersion)"
           - task: TerraformInstaller@0
             displayName: 'Terraform Install'
             condition: and(succeeded(), not(eq(variables.storageAccountName, '')), not(eq(variables.storageAccountKey, '')))
@@ -238,7 +204,7 @@ stages :
             inputs:
               provider: 'azurerm'
               command: 'plan'
-              commandOptions: '-input=false -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="script_storage_account_name=$(storageAccountName)" -var="script_storage_account_key=$(storageAccountKey)" -var="container_name=$(containerName)" -var="script_name=$(scriptName)" -var="hub_vnet_name=$(hubVNetName)" -var="aks_vnet_name=$(aksVNetName)" -var="vm_name=$(vmName)" -var="kubernetes_version=$(kubernetesVersion)" -var="resource_group_name=$(resourceGroupName)" -var="aks_cluster_name=$(aksClusterName)" -var="log_analytics_workspace_name=$(logAnalyticsWorkspaceName)" -var="domain_name_label=$(domainNameLabel)" -var="firewall_name=$(firewallName)" -var="acr_name=$(acrName)" -var="bastion_host_name=$(bastionHostName)" -var="key_vault_name=$(keyVaultName)"'
+              commandOptions: '-input=false -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="resource_group_name=$(resourceGroupName)" -var="script_storage_account_name=$(storageAccountName)" -var="script_storage_account_key=$(storageAccountKey)" -var="container_name=$(containerName)" -var="script_name=$(scriptName)" -var="azure_devops_url=$(azureDevOpsUrl)" -var="azure_devops_pat=$(azureDevOpsPat)" -var="azure_devops_agent_pool_name=$(azureDevOpsAgentPoolName)" -var-file="$(System.DefaultWorkingDirectory)/$(tfvarsPath)'
               environmentServiceNameAzureRM: $(azureSubscription)
               workingDirectory: '$(System.DefaultWorkingDirectory)/$(terraformPath)/'
           - task: TerraformTaskV2@2
@@ -248,7 +214,7 @@ stages :
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              commandOptions: '-input=false -auto-approve -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="script_storage_account_name=$(storageAccountName)" -var="script_storage_account_key=$(storageAccountKey)" -var="container_name=$(containerName)" -var="script_name=$(scriptName)" -var="hub_vnet_name=$(hubVNetName)" -var="aks_vnet_name=$(aksVNetName)" -var="vm_name=$(vmName)" -var="kubernetes_version=$(kubernetesVersion)" -var="resource_group_name=$(resourceGroupName)" -var="aks_cluster_name=$(aksClusterName)" -var="log_analytics_workspace_name=$(logAnalyticsWorkspaceName)" -var="domain_name_label=$(domainNameLabel)" -var="firewall_name=$(firewallName)" -var="acr_name=$(acrName)" -var="bastion_host_name=$(bastionHostName)" -var="key_vault_name=$(keyVaultName)"'
+              commandOptions: '-input=false -auto-approve -var="ssh_public_key=$(sshPublicKey)" -var="location=$(location)" -var="resource_group_name=$(resourceGroupName)" -var="script_storage_account_name=$(storageAccountName)" -var="script_storage_account_key=$(storageAccountKey)" -var="container_name=$(containerName)" -var="script_name=$(scriptName)" -var="azure_devops_url=$(azureDevOpsUrl)" -var="azure_devops_pat=$(azureDevOpsPat)" -var="azure_devops_agent_pool_name=$(azureDevOpsAgentPoolName)" -var-file="$(System.DefaultWorkingDirectory)/$(tfvarsPath)'
               environmentServiceNameAzureRM: $(azureSubscription)
               workingDirectory: '$(System.DefaultWorkingDirectory)/$(terraformPath)/'
           - task: AzureCLI@2
@@ -270,3 +236,4 @@ stages :
                     echo "Failed to delete the temporary storage account"
                     exit -1
                 fi
+

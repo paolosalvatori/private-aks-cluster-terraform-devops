@@ -4,7 +4,12 @@ variable "name" {
 }
 
 variable "resource_group_name" {
-  description = "(Required) Specifies the resource group name of the AKS cluster."
+  description = "(Required) Specifies the name of the resource group."
+  type        = string
+}
+
+variable "resource_group_id" {
+  description = "(Required) Specifies the resource id of the resource group."
   type        = string
 }
 

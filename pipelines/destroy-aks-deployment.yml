@@ -10,7 +10,7 @@ variables:
 - name: terraformVersion
   value: 1.0.7
 - name: terraformPath
-  value: /terraform/
+  value: terraform
 - name: tfstatePath
   value: terraform.tfstate
   
@@ -25,7 +25,7 @@ stages :
     displayName: 'Terraform Destroy'
     continueOnError: false
     steps:
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+    - task: TerraformInstaller@0
       displayName: 'Terraform Install'
       inputs:
         terraformVersion: $(terraformVersion)
@@ -39,7 +39,7 @@ stages :
         backendAzureRmStorageAccountName: $(terraformBackendStorageAccountName)
         backendAzureRmContainerName: '$(terraformBackendContainerName)'
         backendAzureRmKey: $(tfstatePath)
-        workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(terraformPath)/'
     - task: TerraformTaskV1@0
       displayName: 'Terraform Destroy'
       inputs:
@@ -47,4 +47,4 @@ stages :
         command: 'destroy'
         commandOptions: '-input=false -auto-approve -var ssh_public_key="$(sshPublicKey)'
         environmentServiceNameAzureRM: $(azureSubscription)
-        workingDirectory: '$(System.DefaultWorkingDirectory)$(terraformPath)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(terraformPath)/'
