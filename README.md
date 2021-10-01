@@ -31,7 +31,7 @@ In addition, the sample creates a private endpoint to access all the managed ser
 
 The following picture shows the architecture created by the Terraform modules included in this sample:
 
-![Architecture](images/architecture.png)
+![Architecture](images/overall-architecture.png)
 
 The architecture is composed of the following elements:
 
