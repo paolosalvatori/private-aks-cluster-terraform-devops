@@ -81,6 +81,15 @@ There are some requirements you need to complete before we can deploy Terraform 
 - Create an Azure DevOps Project. For more information, see [Create a project in Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/organizations/projects/create-project?view=azure-devops&tabs=preview-page)
 - Create an [Azure DevOps Service Connection](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints?view=azure-devops&tabs=yaml) to your Azure subscription. No matter you use Service Principal Authentication (SPA) or an Azure-Managed Service Identity when creating the service connection, make sure that the service principal or managed identity used by Azure DevOps to connect to your Azure subscription is assigned the owner role on the entire subscription.
 
+# Fix the routing issue ##
+When you deploy an Azure Firewall into a hub virtual network and your private AKS cluster in a spoke virtual network, and you want to use the Azure Firewall to control the egress traffic using network and application rule collections, you need to make sure to properly configure the ingress traffic to any public endpoint exposed by any service running on AKS to enter the system via one of the public IP addresses used by the Azure Firewall. In order to route the traffic of your AKS workloads to the Azure Firewall in the hub virtual network, you need to create and associate a route table to each subnet hosting the worker nodes of your cluster and create a user-defined route to forward the traffic for `0.0.0.0/32` CIDR to the private IP address of the Azure firewall and specify `Virtual appliance` as `next hop type`. For more information, see [Tutorial: Deploy and configure Azure Firewall using the Azure portal](https://docs.microsoft.com/en-us/azure/firewall/tutorial-firewall-deploy-portal#create-a-default-route).
+
+When you introduce an Azure firewall to control the egress traffic from your private AKS cluster, you need to configure the internet traffic to go throught one of the public Ip address associated to the Azure Firewall the Standard Load Balancer of your private AKS cluster. This is where the problem occurs. Packets arrive on the firewall's public IP address, but return to the firewall via the private IP address (using the default route). To avoid this problem, create an additional host route for the firewall's public IP address. Packets going to the firewall's public IP address are routed via the Internet. This avoids taking the default route to the firewall's private IP address.
+
+![Firewall](images/firewall-lb-asymmetric.png)
+
+For more information, see [Restrict egress traffic from an AKS cluster using Azure firewall](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall)
+
 ## Terraform State ##
 In order to deploy Terraform modules to Azure you can use Azure DevOps CI/CD pipelines. [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/user-guide/what-is-azure-devops?view=azure-devops) provides developer services for support teams to plan work, collaborate on code development, and build and deploy applications and infrastructure components using IaC technologies such as ARM Templates, Bicep, and Terraform.
 
@@ -141,18 +150,9 @@ This sample provides three pipelines to deploy the infrastructure using Terrafor
 | [cd-validate-plan-apply-separate-stages.yml](./pipelines/cd-validate-plan-apply-separate-stages.yml) | This pipeline is composed of three distinct stages for [validate](https://www.terraform.io/docs/cli/commands/validate.html), [plan](https://www.terraform.io/docs/cli/commands/plan.html), and [apply](https://www.terraform.io/docs/cli/commands/apply.html). Each stage can be run separately. |
 | [destroy-aks-deployment](./pipelines/destroy-aks-deployment.yml) | This pipeline uses the [destroy](https://www.terraform.io/docs/cli/commands/destroy.html) command to fully remove the resource group and all the Azure resources. |
 | [cd-self-hosted-agent.](./pipelines/cd-self-hosted-agent.yml) | This pipeline can be used to deploy an [Azure DevOps self-hosted agent](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops) as an Ubuntu virtual machine in the same subnet of the jump-box virtual machine. This deployment requires you to pass as a paramater the following information: <ul><li>Url of your Azure DevOps Organization</li><li>Personal access token to access your Azure DevOps organization</li><li>Name of the self-hosted agent pool to join</li></ul>This pipeline must be executed after the AKS deployment. |
-| [cd-redmine-via-helm](./pipelines/cd-redmine-via-helm.yml) | This pipeline can be used to deploy the [redmine] project management we app from using a Helm chart from [ArtifactHub](https://artifacthub.io). This pipeline creates all the necessary Azure services to front the Public IP of the Standard Load Balancer used by the service with Azure Front Door. For more information, see: <ul><li>[Control egress traffic for cluster nodes in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic)</li><li>[Integrate Azure Firewall with Azure Standard Load Balancer](https://docs.microsoft.com/en-us/azure/firewall/integrate-lb)</li></ul> |
+| [cd-redmine-via-helm](./pipelines/cd-redmine-via-helm.yml) | This pipeline can be used to deploy the Bitnami [redmine](https://artifacthub.io/packages/helm/bitnami/redmine) project management web application from using a Helm chart from [ArtifactHub](https://artifacthub.io). This pipeline creates all the necessary Azure services to front the Public IP of the Standard Load Balancer used by the service with Azure Front Door. For more information, see: <ul><li>[Control egress traffic for cluster nodes in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic)</li><li>[Integrate Azure Firewall with Azure Standard Load Balancer](https://docs.microsoft.com/en-us/azure/firewall/integrate-lb)</li></ul> |
 | [destroy-self-hosted-agent](./pipelines/destroy-self-hosted-agent.yml) | This pipeline can be used to destroy the Azure DevOps self-hosted agent. |
-| [destroy-redmine-via-helm](./pipelines/destroy-redmine-via-helm.yml) | This pipeline can be used to uninstall the the [redmine] project management we app using Helm and destroy all the Azure resources used to exposed the service via the AZure Firewall and the AKS cluster Standard Load Balancer. |
-
-# Fix the routing issue ##
-When you deploy an Azure Firewall into a hub virtual network and your private AKS cluster in a spoke virtual network, and you want to use the Azure Firewall to control the egress traffic using network and application rule collections, you need to make sure to properly configure the ingress traffic to any public endpoint exposed by any service running on AKS to enter the system via one of the public IP addresses used by the Azure Firewall. In order to route the traffic of your AKS workloads to the Azure Firewall in the hub virtual network, you need to create and associate a route table to each subnet hosting the worker nodes of your cluster and create a user-defined route to forward the traffic for `0.0.0.0/32` CIDR to the private IP address of the Azure firewall and specify `Virtual appliance` as `next hop type`. For more information, see [Tutorial: Deploy and configure Azure Firewall using the Azure portal](https://docs.microsoft.com/en-us/azure/firewall/tutorial-firewall-deploy-portal#create-a-default-route).
-
-When you introduce an Azure firewall to control the egress traffic from your private AKS cluster, you need to configure the internet traffic to go throught one of the public Ip address associated to the Azure Firewall the Standard Load Balancer of your private AKS cluster. This is where the problem occurs. Packets arrive on the firewall's public IP address, but return to the firewall via the private IP address (using the default route). To avoid this problem, create an additional host route for the firewall's public IP address. Packets going to the firewall's public IP address are routed via the Internet. This avoids taking the default route to the firewall's private IP address.
-
-![Firewall](images/firewall-lb-asymmetric.png)
-
-For more information, see [Restrict egress traffic from an AKS cluster using Azure firewall](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall)
+| [destroy-redmine-via-helm](./pipelines/destroy-redmine-via-helm.yml) | This pipeline can be used to uninstall the Bitnami [redmine](https://artifacthub.io/packages/helm/bitnami/redmine) project management we application using Helm and destroy all the Azure resources used to exposed the service via the AZure Firewall and the AKS cluster Standard Load Balancer. |
 
 ## Terraform Extension for Azure DevOps ##
 All the pipelines make use of the tasks of the [Terraform](https://marketplace.visualstudio.com/items?itemName=ms-devlabs.custom-terraform-tasks) extension. This extension provides the following components:
@@ -172,10 +172,11 @@ The [Terraform task](https://github.com/microsoft/azure-pipelines-extensions/tre
 - [apply](https://www.terraform.io/docs/cli/commands/apply.html)
 - [destroy](https://www.terraform.io/docs/cli/commands/destroy.html)
 
-This extension is intended to run on Windows, Linux and MacOS agents. As an alternative, you can use the [Bash Task](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/bash?view=azure-devops) or [PowerShell Task](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/powershell?view=azure-devops) to install Terraform to the agent and run Terraform commands.
+This extension is intended to run on Windows, Linux and MacOS agents. As an alternative, you can use the [Bash Task](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/bash?
+view=azure-devops) or [PowerShell Task](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/powershell?view=azure-devops) to install Terraform to the agent and run Terraform commands.
 
-## Deployment ##
-The following picture shows the resources deployed by the ARM template in the target resource group.
+## Azure Resources ##
+The following picture shows the resources deployed by the ARM template in the target resource group using one of the Azure DevOps pipelines in this reporitory.
 
 ![Resource Group](images/resourcegroup.png)
 
@@ -193,4 +194,4 @@ If you open an ssh session to the Linux virtual machine via Azure Bastion and ma
 
 ![Architecture](images/nslookup.png)
 
-**NOTE**: the Terraform module runs an [Azure Custom Script Extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-linux) that installed the [kubectl](https://kubernetes.io/docs/reference/kubectl/overview/) and [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) on the jumpbox virtual machine.
+**NOTE**: the Terraform module runs an [Azure Custom Script Extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-linux) that installed the [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/) and [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) on the jumpbox virtual machine.
