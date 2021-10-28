@@ -274,7 +274,7 @@ variable "azure_policy" {
     enabled     = bool
   })
   default     = {
-    enabled     = false
+    enabled     = true
   }
 }
 
