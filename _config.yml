@@ -11,6 +11,7 @@ title: Create a private Azure Kubernetes Service cluster using Terraform and Azu
 description: This sample shows how to create a private AKS cluster using Terraform and Azure DevOps.
 markdown: kramdown
 highlighter: rouge
-relative_links:
-  enabled: true
-  collections: true
+readme_index:
+  enabled:          true
+  remove_originals: false
+  with_frontmatter: false
