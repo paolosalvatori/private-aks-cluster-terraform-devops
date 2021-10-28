@@ -1,11 +1,29 @@
+author:
+  name: Paolo Salvatori
+  twitter: babosbird
+  linkedin: paolo-salvatori
+  location: Milan, Italy
+twitter:
+  username: babosbird
+  card: summary
 theme: jekyll-theme-cayman
 title: Create a private Azure Kubernetes Service cluster using Terraform and Azure DevOps
 description: This sample shows how to create a private AKS cluster using Terraform and Azure DevOps.
 markdown: kramdown
+highlighter: rouge
 plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-redirect-from
+  - jekyll-coffeescript
+  - jekyll-default-layout
+  - jekyll-gist
+  - jekyll-github-metadata
+  - jekyll-optional-front-matter
+  - jekyll-paginate
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
   - jekyll-relative-links
 relative_links:
   enabled: true
   collections: true
-include:
-  - README.md
