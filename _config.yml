@@ -1,4 +1,4 @@
-theme: jekyll-theme-architect
+theme: jekyll-theme-cayman
 title: Create a private Azure Kubernetes Service cluster using Terraform and Azure DevOps
 description: This sample shows how to create a private AKS cluster using Terraform and Azure DevOps.
 markdown: kramdown
