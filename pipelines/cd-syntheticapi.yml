@@ -491,6 +491,7 @@ stages :
                   --destination-ports 443 \
                   --ip-protocols TCP \
                   --source-addresses '*' \
+                  --translated-fqdn """""" \
                   --translated-port 443 \
                   --translated-address $(externalIpAddress) 1>/dev/null
               
@@ -518,6 +519,7 @@ stages :
                   --destination-ports 80 \
                   --ip-protocols TCP \
                   --source-addresses '*' \
+                  --translated-fqdn """""" \
                   --translated-port 80 \
                   --translated-address $(externalIpAddress) 1>/dev/null
               
