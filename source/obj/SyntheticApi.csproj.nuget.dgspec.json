@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj": {}
+    "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj": {}
   },
   "projects": {
-    "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj": {
+    "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
+        "projectUniqueName": "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
         "projectName": "SyntheticApi",
-        "projectPath": "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
+        "projectPath": "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
         "packagesPath": "C:\\Users\\Paolo\\.nuget\\packages\\",
-        "outputPath": "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\obj\\",
+        "outputPath": "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -81,7 +81,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.102\\RuntimeIdentifierGraph.json"
         }
       }
     }

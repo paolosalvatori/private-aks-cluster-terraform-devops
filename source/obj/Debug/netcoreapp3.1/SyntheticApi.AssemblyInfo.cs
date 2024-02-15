@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyntheticApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e2a0093f719a331d7d83ac436fb45220018c2c7")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyntheticApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyntheticApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

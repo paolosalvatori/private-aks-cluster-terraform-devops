@@ -1,13 +1,36 @@
 ---
-services: aks, container-registry, azure-monitor, storage, virtual-network, virtual-machines, private-link, templates, terraform, devops, firewall
-author: paolosalvatori
+page_type: sample
+languages:
+- azurecli
+- bash
+- javascript
+- terraform
+- csharp
+products:
+- azure
+- azure-firewall
+- azure-kubernetes-service
+- azure-container-registry
+- azure-storage
+- azure-blob-storage
+- azure-storage-accounts
+- azure-bastion
+- azure-private-link
+- azure-virtual-network
+- azure-key-vault
+- azure-log-analytics
+- azure-virtual-machines
+- azure-devops
+name: Create a private Azure Kubernetes Service cluster using Terraform and Azure DevOps
+description: This sample shows how to create a private AKS cluster using Terraform and Azure DevOps in a hub and spoke network topology with Azure Firewall.
+urlFragment: private-aks-cluster-terraform-devops
 ---
 
 # Create a private Azure Kubernetes Service cluster using Terraform and Azure DevOps #
 
 This sample shows how to create a [private AKS clusters](https://docs.microsoft.com/en-us/azure/aks/private-clusters) using:
 
-- [Terraform](https://www.terraform.io/intro/index.html) as infrastructure as code (IaC) tool to build, change, and version the infrastructure on Azure in a safe, repeatable, and efficient way. 
+- [Terraform](https://www.terraform.io/intro/index.html) as infrastructure as code (IaC) tool to build, change, and version the infrastructure on Azure in a safe, repeatable, and efficient way.
 - [Azure DevOps Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/what-is-azure-pipelines?view=azure-devops) to automate the deployment and undeployment of the entire infrastructure on multiple environments on the Azure platform.
 
 In a private AKS cluster, the API server endpoint is not exposed via a public IP address. Hence, to manage the API server, you will need to use a virtual machine that has access to the AKS cluster's Azure Virtual Network (VNet). This sample deploys a jumpbox virtual machine in the hub virtual network peered with the virtual network that hosts the private AKS cluster. There are several options for establishing network connectivity to the private cluster.

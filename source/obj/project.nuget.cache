@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6MxMgMZ3WXLLt7SwObUELzdQwCZZWWPSbHXBgq4TgO4i4qTb+Le6i8GZu7ZSKrn6g2MOgostH8iRpnN9QshA3Q==",
+  "dgSpecHash": "g6JoCKaySvrE7MLlaqNjDV3oOIWch/ToRyOv0QVnBpslZnIHQQvY3FraJ42/p40oAHofkghHOmVL8FQOMrbccg==",
   "success": true,
-  "projectFilePath": "d:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
+  "projectFilePath": "D:\\Projects\\AzureProjects\\Terraform\\azure-devops-aks\\azure-devops-aks-my-github\\source\\SyntheticApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Paolo\\.nuget\\packages\\microsoft.applicationinsights\\2.18.0\\microsoft.applicationinsights.2.18.0.nupkg.sha512",
     "C:\\Users\\Paolo\\.nuget\\packages\\microsoft.applicationinsights.aspnetcore\\2.18.0\\microsoft.applicationinsights.aspnetcore.2.18.0.nupkg.sha512",
